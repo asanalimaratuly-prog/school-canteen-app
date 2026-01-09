@@ -1,52 +1,19 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import {
-  getFirestore, collection, getDocs, query, where
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-// Firebase CDN (модульный SDK)
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>School Canteen</title>
+</head>
+<body>
 
-// 1) ВСТАВЬ СВОЙ КОНФИГ ИЗ FIREBASE 
-const firebaseConfig = {
-  apiKey: "AIzaSyD3SQTDEmr7g8r9VHWX5Q-h4Tfq2d0rRiE",
-  authDomain: "ashana-ca8a3.firebaseapp.com",
-  projectId: "ashana-ca8a3",
-  storageBucket: "ashana-ca8a3.firebasestorage.app",
-  messagingSenderId: "1004661503332",
-  appId: "1:1004661503332:web:ba12c7e9d25144c3f07671"
-};
+  <h1>🍽 Школьная столовая</h1>
+  <p id="status">Загрузка...</p>
 
-// 2) Инициализация
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  <h2>Меню</h2>
+  <div id="menu"></div>
 
-const statusEl = document.getElementById("status");
-const menuEl = document.getElementById("menu");
+  <!-- ВАЖНО: подключаем JS как module -->
+  <script type="module" src="./app.js"></script>
 
-async function loadMenu() {
-  try {
-    statusEl.textContent = "Загружаю меню из Firestore...";
-
-    const snap = await getDocs(collection(db, "menu"));
-
-    if (snap.empty) {
-      statusEl.textContent = "Меню пустое (в коллекции menu нет документов).";
-      menuEl.innerHTML = "";
-      return;
-    }
-
-    const items = [];
-    snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-
-    statusEl.textContent = "Готово ✅";
- menuEl.innerHTML = items.map(i => `
-  <div style="margin-bottom:8px;">
-    <b>${i.name_ru ?? "Без названия"}</b> — ${i.price} ₸
-  </div>
-`).join("");
-
-  } catch (e) {
-    console.error(e);
-    statusEl.textContent = "Ошибка загрузки. Открой Console (F12) и посмотри ошибку.";
-  }
-}
-
-loadMenu();
+</body>
+</html>
