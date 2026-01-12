@@ -1,11 +1,11 @@
-import { initializeApp } from "https://www.gstaticstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getFirestore,
   collection,
   getDocs,
   query,
   where,
-} from "https://www.gstaticstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 
 // ===== 1) ВСТАВЬ СВОЙ firebaseConfig (НЕ МЕНЯЯ НАЗВАНИЯ ПОЛЕЙ) =====
 const firebaseConfig = {
