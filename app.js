@@ -1,12 +1,12 @@
-// ✅ ВАЖНО: тут должен быть домен gstatic.com (НЕ gstaticstatic)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+
 import {
-  getFirestore,
-  collection,
-  getDocs,
-  addDoc,
-  serverTimestamp
+  getFirestore, collection, getDocs, addDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 // ====== 1) ВСТАВЬ СВОЙ firebaseConfig ======
 const firebaseConfig = {
@@ -21,6 +21,85 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+// ✅ AUTH
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+// UI элементы админки
+const btnLogin = document.getElementById("btnLogin");
+const btnLogout = document.getElementById("btnLogout");
+const adminInfo = document.getElementById("adminInfo");
+const adminForm = document.getElementById("adminForm");
+const adminMsg = document.getElementById("adminMsg");
+
+const newNameRu = document.getElementById("newNameRu");
+const newNameKz = document.getElementById("newNameKz");
+const newPrice  = document.getElementById("newPrice");
+const newCategory = document.getElementById("newCategory");
+const newAvailable = document.getElementById("newAvailable");
+const btnAddMenu = document.getElementById("btnAddMenu");
+
+// кнопки вход/выход
+btnLogin?.addEventListener("click", async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    console.error(e);
+    adminMsg.textContent = "Ошибка входа. Открой Console (F12).";
+  }
+});
+
+btnLogout?.addEventListener("click", async () => {
+  await signOut(auth);
+});
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    adminInfo.textContent = `Вошли: ${user.email} | UID: ${user.uid}`;
+    btnLogin.style.display = "none";
+    btnLogout.style.display = "inline-block";
+    adminForm.style.display = "block";
+  } else {
+    adminInfo.textContent = "Не вошли";
+    btnLogin.style.display = "inline-block";
+    btnLogout.style.display = "none";
+    adminForm.style.display = "none";
+    adminMsg.textContent = "";
+  }
+});
+
+// ✅ добавление блюда
+btnAddMenu?.addEventListener("click", async () => {
+  try {
+    adminMsg.textContent = "Добавляю...";
+    const ru = (newNameRu.value || "").trim();
+    const kz = (newNameKz.value || "").trim();
+    const price = Number(newPrice.value);
+
+    if (!ru || !price) {
+      adminMsg.textContent = "Заполни RU и цену.";
+      return;
+    }
+
+    await addDoc(collection(db, "menu"), {
+      name_ru: ru,
+      name_kz: kz,
+      price: price,
+      category: newCategory.value,
+      available: !!newAvailable.checked,
+      createdAt: serverTimestamp()
+    });
+
+    adminMsg.textContent = "✅ Добавлено! Нажми «Обновить меню» (или обнови страницу).";
+    newNameRu.value = "";
+    newNameKz.value = "";
+    newPrice.value = "";
+
+  } catch (e) {
+    console.error(e);
+    adminMsg.textContent = "❌ Ошибка добавления. Открой Console (F12).";
+  }
+});
 
 // UI
 const statusEl = document.getElementById("status");
