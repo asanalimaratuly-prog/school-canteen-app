@@ -1,13 +1,14 @@
+// ✅ ВАЖНО: тут должен быть домен gstatic.com (НЕ gstaticstatic)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getFirestore,
   collection,
   getDocs,
-  query,
-  where,
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  addDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// ===== 1) ВСТАВЬ СВОЙ firebaseConfig (НЕ МЕНЯЯ НАЗВАНИЯ ПОЛЕЙ) =====
+// ====== 1) ВСТАВЬ СВОЙ firebaseConfig ======
 const firebaseConfig = {
   // apiKey: "...",
   // authDomain: "...",
@@ -16,84 +17,276 @@ const firebaseConfig = {
   // messagingSenderId: "...",
   // appId: "..."
 };
-// ================================================================
+// ===========================================
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// UI
 const statusEl = document.getElementById("status");
 const menuEl = document.getElementById("menu");
+const totalEl = document.getElementById("total");
+const cartListEl = document.getElementById("cartList");
+const cartEmptyEl = document.getElementById("cartEmpty");
+const itemsCountEl = document.getElementById("itemsCount");
 
-// Чтобы видеть ошибку прямо на странице
-function showError(title, err) {
-  console.error(title, err);
-  statusEl.textContent = title;
-  menuEl.innerHTML = `
-    <div style="padding:12px;border:1px solid #f5c2c7;background:#f8d7da;border-radius:10px;max-width:720px;">
-      <b>${title}</b><br/>
-      <div style="margin-top:8px;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:12px;">
-        ${String(err?.message || err || "")}
-      </div>
-      <div style="margin-top:8px;font-size:12px;">
-        Открой Console (F12) → вкладка Console и пришли красную строку.
-      </div>
-    </div>
-  `;
-}
+const searchEl = document.getElementById("search");
+const sortEl = document.getElementById("sort");
+const refreshBtn = document.getElementById("refreshBtn");
 
+const classInput = document.getElementById("classInput");
+const nameInput = document.getElementById("nameInput");
+const orderBtn = document.getElementById("orderBtn");
+
+const todayEl = document.getElementById("today");
+
+// QR
+const qrBtn = document.getElementById("qrBtn");
+const qrImg = document.getElementById("qrImg");
+const siteLink = document.getElementById("siteLink");
+
+const fmtMoney = (n) => Number(n || 0).toLocaleString("ru-RU");
+
+// state
+let menuItems = []; // [{id, name, price, category?}]
+let cart = new Map(); // id -> {id,name,price,qty}
+
+todayEl.textContent = new Date().toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+// ====== MENU ======
 async function loadMenu() {
-  console.log("LOAD MENU START");
-  statusEl.textContent = "Загрузка меню...";
-
-  // Таймаут, чтобы не висело вечно
-  const timeoutMs = 8000;
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error("Таймаут Firestore (8 сек). Проверь интернет / projectId / rules.")), timeoutMs)
-  );
+  statusEl.textContent = "Загрузка меню…";
+  menuEl.innerHTML = "";
+  menuItems = [];
 
   try {
-    const q = collection(db, "menu");
-
-    const snap = await Promise.race([getDocs(q), timeoutPromise]);
-
-    if (snap.empty) {
-      statusEl.textContent = "Меню пустое (в Firestore нет документов в коллекции menu).";
-      menuEl.innerHTML = `
-        <div style="padding:12px;border:1px solid #ffeeba;background:#fff3cd;border-radius:10px;max-width:720px;">
-          <b>Коллекция menu пустая</b><br/>
-          Добавь документ: Firestore → Data → Start collection → <code>menu</code><br/>
-          Поля: <code>name</code> (строка), <code>price</code> (число)
-        </div>
-      `;
-      return;
-    }
-
-    const items = [];
+    const snap = await getDocs(collection(db, "menu"));
     snap.forEach((doc) => {
       const d = doc.data();
-      items.push({
+      // защита от пустых/кривых данных
+      const name = (d.name ?? "").toString().trim();
+      const price = Number(d.price ?? 0);
+
+      if (!name) return;
+
+      menuItems.push({
         id: doc.id,
-        name: d.name ?? d.name_ru ?? "Без названия",
-        price: d.price ?? 0,
+        name,
+        price,
+        category: (d.category ?? "").toString().trim()
       });
     });
 
-    statusEl.textContent = "Готово ✅";
-    menuEl.innerHTML = items
-      .map(
-        (i) => `
-        <div style="padding:10px 0;border-bottom:1px solid #eee;max-width:720px;">
-          <b>${i.name}</b>
-          <span style="float:right">${i.price} ₸</span>
-        </div>
-      `
-      )
-      .join("");
+    itemsCountEl.textContent = String(menuItems.length);
 
-    console.log("LOAD MENU OK:", items.length);
+    statusEl.textContent = menuItems.length ? "Готово ✅" : "Меню пустое (в Firestore нет документов в menu)";
+    renderMenu();
   } catch (e) {
-    showError("Ошибка загрузки меню", e);
+    console.error(e);
+    statusEl.textContent = "Ошибка загрузки. Открой Console (F12) и посмотри ошибку.";
+    menuEl.innerHTML = `<div class="alert alert-danger">Не удалось загрузить меню.</div>`;
   }
 }
 
+function getFilteredSortedMenu() {
+  const q = (searchEl.value || "").toLowerCase().trim();
+
+  let arr = menuItems.filter((x) => {
+    if (!q) return true;
+    return x.name.toLowerCase().includes(q) || (x.category || "").toLowerCase().includes(q);
+  });
+
+  const sort = sortEl.value;
+  if (sort === "priceAsc") arr.sort((a, b) => a.price - b.price);
+  if (sort === "priceDesc") arr.sort((a, b) => b.price - a.price);
+  if (sort === "nameAsc") arr.sort((a, b) => a.name.localeCompare(b.name, "ru"));
+
+  return arr;
+}
+
+function renderMenu() {
+  const arr = getFilteredSortedMenu();
+
+  if (!arr.length) {
+    menuEl.innerHTML = `<div class="alert alert-warning mb-0">Ничего не найдено.</div>`;
+    return;
+  }
+
+  menuEl.innerHTML = arr.map((item) => {
+    const inCart = cart.get(item.id);
+    const qty = inCart?.qty ?? 0;
+
+    return `
+      <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="fw-semibold">${escapeHtml(item.name)}</div>
+            <div class="muted small">${escapeHtml(item.category || "Без категории")}</div>
+          </div>
+          <div class="price">${fmtMoney(item.price)} ₸</div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-secondary btn-sm" data-action="dec" data-id="${item.id}">−</button>
+            <span class="badge text-bg-light qty-badge">${qty}</span>
+            <button class="btn btn-outline-secondary btn-sm" data-action="inc" data-id="${item.id}">+</button>
+          </div>
+          <button class="btn btn-primary btn-sm" data-action="add" data-id="${item.id}">
+            Добавить
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // обработчики
+  menuEl.querySelectorAll("button[data-action]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      const item = menuItems.find((x) => x.id === id);
+      if (!item) return;
+
+      if (action === "add" || action === "inc") addToCart(item, 1);
+      if (action === "dec") addToCart(item, -1);
+    });
+  });
+}
+
+// ====== CART ======
+function addToCart(item, delta) {
+  const cur = cart.get(item.id) || { ...item, qty: 0 };
+  cur.qty += delta;
+
+  if (cur.qty <= 0) cart.delete(item.id);
+  else cart.set(item.id, cur);
+
+  renderCart();
+  renderMenu(); // чтобы обновлялись счётчики
+}
+
+function renderCart() {
+  const items = Array.from(cart.values());
+
+  if (!items.length) {
+    cartEmptyEl.style.display = "";
+    cartListEl.style.display = "none";
+    cartListEl.innerHTML = "";
+    totalEl.textContent = "0";
+    return;
+  }
+
+  cartEmptyEl.style.display = "none";
+  cartListEl.style.display = "";
+  cartListEl.innerHTML = items.map((x) => `
+    <div class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <div class="fw-semibold">${escapeHtml(x.name)}</div>
+        <div class="muted small">${fmtMoney(x.price)} ₸ × ${x.qty}</div>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" data-cart="dec" data-id="${x.id}">−</button>
+        <button class="btn btn-outline-secondary btn-sm" data-cart="inc" data-id="${x.id}">+</button>
+      </div>
+    </div>
+  `).join("");
+
+  cartListEl.querySelectorAll("button[data-cart]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      const action = btn.dataset.cart;
+      const item = menuItems.find((m) => m.id === id) || cart.get(id);
+      if (!item) return;
+      addToCart(item, action === "inc" ? 1 : -1);
+    });
+  });
+
+  const total = items.reduce((sum, x) => sum + (Number(x.price) * Number(x.qty)), 0);
+  totalEl.textContent = fmtMoney(total);
+}
+
+// ====== ORDER ======
+async function submitOrder() {
+  const items = Array.from(cart.values());
+  if (!items.length) {
+    alert("Корзина пуста.");
+    return;
+  }
+
+  const cls = (classInput.value || "").trim();
+  const name = (nameInput.value || "").trim();
+
+  if (!cls || !name) {
+    alert("Заполни класс и имя.");
+    return;
+  }
+
+  const total = items.reduce((sum, x) => sum + (Number(x.price) * Number(x.qty)), 0);
+
+  orderBtn.disabled = true;
+  orderBtn.textContent = "Отправка…";
+
+  try {
+    await addDoc(collection(db, "orders"), {
+      class: cls,
+      name,
+      items: items.map((x) => ({
+        id: x.id,
+        name: x.name,
+        price: Number(x.price),
+        qty: Number(x.qty),
+        lineTotal: Number(x.price) * Number(x.qty)
+      })),
+      total: Number(total),
+      status: "new",
+      createdAt: serverTimestamp()
+    });
+
+    cart.clear();
+    renderCart();
+    renderMenu();
+    alert("Заказ отправлен ✅");
+  } catch (e) {
+    console.error(e);
+    alert("Ошибка отправки заказа. Открой Console (F12).");
+  } finally {
+    orderBtn.disabled = false;
+    orderBtn.textContent = "Оформить заказ";
+  }
+}
+
+// ====== QR ======
+function showQR() {
+  const url = window.location.href;
+  siteLink.textContent = url;
+
+  // бесплатный генератор QR (как картинка)
+  const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" + encodeURIComponent(url);
+  qrImg.src = qrUrl;
+
+  const modal = new bootstrap.Modal(document.getElementById("qrModal"));
+  modal.show();
+}
+
+// ====== helpers ======
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  }[ch]));
+}
+
+// ====== events ======
+searchEl.addEventListener("input", renderMenu);
+sortEl.addEventListener("change", renderMenu);
+refreshBtn.addEventListener("click", loadMenu);
+orderBtn.addEventListener("click", submitOrder);
+qrBtn.addEventListener("click", showQR);
+
+// старт
 loadMenu();
+renderCart();
