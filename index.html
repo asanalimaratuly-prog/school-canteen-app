@@ -35,6 +35,56 @@
           <div id="status" class="muted">Загрузка…</div>
         </div>
       </div>
+<!-- ================== АДМИН-ПАНЕЛЬ ================== -->
+<div class="card mt-3" style="max-width: 760px;">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+      <div>
+        <b>Админ</b>
+        <div id="adminInfo" class="text-muted" style="font-size: 13px;">Не вошли</div>
+      </div>
+      <div class="d-flex gap-2">
+        <button id="btnLogin" class="btn btn-outline-primary btn-sm">Войти (Google)</button>
+        <button id="btnLogout" class="btn btn-outline-secondary btn-sm" style="display:none;">Выйти</button>
+      </div>
+    </div>
+
+    <hr/>
+
+    <div id="adminForm" style="display:none;">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <input id="newNameRu" class="form-control" placeholder="Название RU (Плов)" />
+        </div>
+        <div class="col-md-4">
+          <input id="newNameKz" class="form-control" placeholder="Название KZ (Палау)" />
+        </div>
+        <div class="col-md-2">
+          <input id="newPrice" type="number" class="form-control" placeholder="Цена" />
+        </div>
+        <div class="col-md-2">
+          <select id="newCategory" class="form-select">
+            <option value="Горячее">Горячее</option>
+            <option value="Напитки">Напитки</option>
+            <option value="Выпечка">Выпечка</option>
+            <option value="Салат">Салат</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center justify-content-between mt-2 flex-wrap gap-2">
+        <label class="d-flex align-items-center gap-2">
+          <input id="newAvailable" type="checkbox" checked />
+          <span>В наличии</span>
+        </label>
+        <button id="btnAddMenu" class="btn btn-success">Добавить блюдо</button>
+      </div>
+
+      <div id="adminMsg" class="text-muted mt-2" style="font-size: 13px;"></div>
+    </div>
+  </div>
+</div>
+<!-- ================== /АДМИН-ПАНЕЛЬ ================== -->
 
       <div class="d-flex gap-2 align-items-center">
         <button id="qrBtn" class="btn btn-outline-secondary btn-sm">QR-ссылка</button>
