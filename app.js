@@ -24,7 +24,6 @@ const firebaseConfig = {
   storageBucket: "ashana-ca8a3.firebasestorage.app",
   messagingSenderId: "1004661503332",
   appId: "1:1004661503332:web:ba12c7e9d25144c3f07671"
-
 };
 
 // Загрузка меню
