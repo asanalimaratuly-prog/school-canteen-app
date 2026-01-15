@@ -16,61 +16,21 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 // ✅ ВСТАВЬ СВОЙ firebaseConfig
-npm install firebase
+const firebaseConfig = {
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  apiKey: "AIzaSyD3SQTDEmr7g8r9VHWX5Q-h4Tfq2d0rRiE",
 
-// UI
-const statusEl = document.getElementById("status");
-const menuEl = document.getElementById("menu");
+  authDomain: "ashana-ca8a3.firebaseapp.com",
 
-const btnLogin = document.getElementById("btnLogin");
-const btnLogout = document.getElementById("btnLogout");
-const adminInfo = document.getElementById("adminInfo");
-const adminForm = document.getElementById("adminForm");
-const adminMsg = document.getElementById("adminMsg");
+  projectId: "ashana-ca8a3",
 
-const newNameRu = document.getElementById("newNameRu");
-const newNameKz = document.getElementById("newNameKz");
-const newPrice = document.getElementById("newPrice");
-const newCategory = document.getElementById("newCategory");
-const newAvailable = document.getElementById("newAvailable");
-const btnAddMenu = document.getElementById("btnAddMenu");
+  storageBucket: "ashana-ca8a3.firebasestorage.app",
 
-const refreshBtn = document.getElementById("refreshBtn");
+  messagingSenderId: "1004661503332",
 
-// Auth
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+  appId: "1:1004661503332:web:ba12c7e9d25144c3f07671"
 
-btnLogin?.addEventListener("click", async () => {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (e) {
-    console.error(e);
-    adminMsg.textContent = "Ошибка входа (см. Console F12)";
-  }
-});
-
-btnLogout?.addEventListener("click", async () => {
-  await signOut(auth);
-});
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    adminInfo.textContent = `Вошли: ${user.email}`;
-    btnLogin.style.display = "none";
-    btnLogout.style.display = "inline-block";
-    adminForm.style.display = "block";
-  } else {
-    adminInfo.textContent = "Не вошли";
-    btnLogin.style.display = "inline-block";
-    btnLogout.style.display = "none";
-    adminForm.style.display = "none";
-    adminMsg.textContent = "";
-  }
-});
+};
 
 // Загрузка меню
 async function loadMenu() {
