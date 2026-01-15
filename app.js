@@ -134,90 +134,78 @@ todayEl.textContent = new Date().toLocaleDateString("ru-RU", { day: "2-digit", m
 
 // ====== MENU ======
 async function loadMenu() {
-  statusEl.textContent = "Загрузка меню…";
-  menuEl.innerHTML = "";
-  menuItems = [];
-
   try {
+    statusEl.textContent = "Загрузка меню...";
+    menuEl.innerHTML = "";
+
+    // Берём ВСЕ блюда без фильтра where()
     const snap = await getDocs(collection(db, "menu"));
-    snap.forEach((doc) => {
-      const d = doc.data();
-      // защита от пустых/кривых данных
-      const name = (d.name ?? "").toString().trim();
-      const price = Number(d.price ?? 0);
 
-      if (!name) return;
+    const items = [];
+    snap.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
 
-      menuItems.push({
-        id: doc.id,
-        name,
-        price,
-        category: (d.category ?? "").toString().trim()
-      });
+    // ✅ выбранная дата (как на кнопке/бейдже)
+    // Если в коде у тебя уже есть переменная выбранной даты — оставь её.
+    // Иначе берём текст из элемента даты (если он есть).
+    const selectedDay =
+      (document.getElementById("dayBadge")?.textContent || "").trim() || "";
+
+    // ✅ Показываем:
+    // - те, у кого day совпадает с выбранной датой
+    // - ИЛИ те, у кого day вообще не задан (старые документы)
+    let filtered = items.filter((i) => {
+      if (i.available === false) return false;
+      if (!selectedDay) return true;
+      if (!i.day) return true;             // старые документы без day показываем
+      return i.day === selectedDay;         // новые с day — по совпадению
     });
 
-    itemsCountEl.textContent = String(menuItems.length);
+    // Поиск
+    const q = (searchEl?.value || "").toLowerCase().trim();
+    if (q) {
+      filtered = filtered.filter((i) =>
+        String(i.name_ru || i.name_kz || "").toLowerCase().includes(q)
+      );
+    }
 
-    statusEl.textContent = menuItems.length ? "Готово ✅" : "Меню пустое (в Firestore нет документов в menu)";
-    renderMenu();
+    // Сортировка
+    const sort = sortEl?.value || "default";
+    if (sort === "price_asc") filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
+    if (sort === "price_desc") filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
+    if (sort === "name") filtered.sort((a, b) => String(a.name_ru || "").localeCompare(String(b.name_ru || ""), "ru"));
+
+    if (!filtered.length) {
+      statusEl.textContent = "Меню пустое (в Firestore нет документов в menu)";
+      menuEl.innerHTML = `<div class="alert alert-warning mb-0">Ничего не найдено.</div>`;
+      return;
+    }
+
+    statusEl.textContent = "Готово ✅";
+
+    // Рендер карточек
+    menuEl.innerHTML = filtered.map((i) => `
+      <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+        <div>
+          <div class="fw-bold">${i.name_ru ?? "Без названия"}</div>
+          <div class="text-muted small">${i.category ?? ""} ${i.name_kz ? "• " + i.name_kz : ""}</div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="fw-bold">${i.price ?? 0} ₸</div>
+          <button class="btn btn-sm btn-success" data-add="${i.id}">+</button>
+        </div>
+      </div>
+    `).join("");
+
+    // навешиваем кнопки +
+    menuEl.querySelectorAll("[data-add]").forEach(btn => {
+      btn.addEventListener("click", () => addToCart(btn.dataset.add));
+    });
+
   } catch (e) {
     console.error(e);
     statusEl.textContent = "Ошибка загрузки. Открой Console (F12) и посмотри ошибку.";
-    menuEl.innerHTML = `<div class="alert alert-danger">Не удалось загрузить меню.</div>`;
   }
 }
-
-function getFilteredSortedMenu() {
-  const q = (searchEl.value || "").toLowerCase().trim();
-
-  let arr = menuItems.filter((x) => {
-    if (!q) return true;
-    return x.name.toLowerCase().includes(q) || (x.category || "").toLowerCase().includes(q);
-  });
-
-  const sort = sortEl.value;
-  if (sort === "priceAsc") arr.sort((a, b) => a.price - b.price);
-  if (sort === "priceDesc") arr.sort((a, b) => b.price - a.price);
-  if (sort === "nameAsc") arr.sort((a, b) => a.name.localeCompare(b.name, "ru"));
-
-  return arr;
-}
-
-function renderMenu() {
-  const arr = getFilteredSortedMenu();
-
-  if (!arr.length) {
-    menuEl.innerHTML = `<div class="alert alert-warning mb-0">Ничего не найдено.</div>`;
-    return;
-  }
-
-  menuEl.innerHTML = arr.map((item) => {
-    const inCart = cart.get(item.id);
-    const qty = inCart?.qty ?? 0;
-
-    return `
-      <div class="card p-3">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <div class="fw-semibold">${escapeHtml(item.name)}</div>
-            <div class="muted small">${escapeHtml(item.category || "Без категории")}</div>
-          </div>
-          <div class="price">${fmtMoney(item.price)} ₸</div>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-outline-secondary btn-sm" data-action="dec" data-id="${item.id}">−</button>
-            <span class="badge text-bg-light qty-badge">${qty}</span>
-            <button class="btn btn-outline-secondary btn-sm" data-action="inc" data-id="${item.id}">+</button>
-          </div>
-          <button class="btn btn-primary btn-sm" data-action="add" data-id="${item.id}">
-            Добавить
-          </button>
-        </div>
-      </div>
-    `;
-  }).join("");
 
   // обработчики
   menuEl.querySelectorAll("button[data-action]").forEach((btn) => {
