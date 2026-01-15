@@ -17,7 +17,6 @@ import {
 
 // ✅ ВСТАВЬ СВОЙ firebaseConfig
 const firebaseConfig = {
-
   apiKey: "AIzaSyD3SQTDEmr7g8r9VHWX5Q-h4Tfq2d0rRiE",
   authDomain: "ashana-ca8a3.firebaseapp.com",
   projectId: "ashana-ca8a3",
