@@ -167,7 +167,6 @@ async function loadMenu() {
       filtered = filtered.filter((i) =>
         String(i.name_ru || i.name_kz || "").toLowerCase().includes(q)
       );
-    }
 
     // Сортировка
     const sort = sortEl?.value || "default";
