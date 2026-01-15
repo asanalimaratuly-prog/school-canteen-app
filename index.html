@@ -2,177 +2,162 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>School Canteen</title>
 
-  <!-- Bootstrap (для красивого интерфейса) -->
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    body { background:#f8f9fa; }
-    .card { border-radius: 14px; }
-    .menu-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-    .price { font-weight:600; }
-    .qty-badge { font-size:12px; }
-    .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .brand { display:flex; align-items:center; gap:10px; }
-    .brand h1 { font-size:28px; margin:0; }
+    body { background:#f7f7fb; }
+    .card-soft { border: 1px solid rgba(0,0,0,.06); border-radius: 16px; }
+    .menu-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .menu-card { border-radius: 16px; }
     .muted { color:#6c757d; }
-    .sticky-cart { position: sticky; top: 14px; }
-    .small-note { font-size:12px; color:#6c757d; }
+    .pill { display:inline-flex; align-items:center; gap:8px; padding:.25rem .6rem; border-radius:999px; background:#fff; border:1px solid rgba(0,0,0,.06); }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .pill { border:1px solid #dee2e6; border-radius:999px; padding:6px 10px; background:#fff; }
   </style>
 </head>
 
 <body>
   <div class="container py-4">
-    <div class="topbar mb-3">
-      <div class="brand">
-        <div style="font-size:30px;">🍽️</div>
+    <!-- Header -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+      <div class="d-flex align-items-center gap-3">
+        <div style="font-size:40px">🍽️</div>
         <div>
-          <h1>Школьная столовая</h1>
+          <h2 class="m-0">Школьная столовая</h2>
           <div id="status" class="muted">Загрузка…</div>
         </div>
       </div>
-<!-- ================== АДМИН-ПАНЕЛЬ ================== -->
-<div class="card mt-3" style="max-width: 760px;">
-  <div class="card-body">
-    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-      <div>
-        <b>Админ</b>
-        <div id="adminInfo" class="text-muted" style="font-size: 13px;">Не вошли</div>
-      </div>
-      <div class="d-flex gap-2">
-        <button id="btnLogin" class="btn btn-outline-primary btn-sm">Войти (Google)</button>
-        <button id="btnLogout" class="btn btn-outline-secondary btn-sm" style="display:none;">Выйти</button>
-      </div>
-    </div>
 
-    <hr/>
-
-    <div id="adminForm" style="display:none;">
-      <div class="row g-2">
-        <div class="col-md-4">
-          <input id="newNameRu" class="form-control" placeholder="Название RU (Плов)" />
-        </div>
-        <div class="col-md-4">
-          <input id="newNameKz" class="form-control" placeholder="Название KZ (Палау)" />
-        </div>
-        <div class="col-md-2">
-          <input id="newPrice" type="number" class="form-control" placeholder="Цена" />
-        </div>
-        <div class="col-md-2">
-          <select id="newCategory" class="form-select">
-            <option value="Горячее">Горячее</option>
-            <option value="Напитки">Напитки</option>
-            <option value="Выпечка">Выпечка</option>
-            <option value="Салат">Салат</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="d-flex align-items-center justify-content-between mt-2 flex-wrap gap-2">
-        <label class="d-flex align-items-center gap-2">
-          <input id="newAvailable" type="checkbox" checked />
-          <span>В наличии</span>
-        </label>
-        <button id="btnAddMenu" class="btn btn-success">Добавить блюдо</button>
-      </div>
-
-      <div id="adminMsg" class="text-muted mt-2" style="font-size: 13px;"></div>
-    </div>
-  </div>
-</div>
-<!-- ================== /АДМИН-ПАНЕЛЬ ================== -->
-
-      <div class="d-flex gap-2 align-items-center">
+      <div class="d-flex align-items-center gap-2">
         <button id="qrBtn" class="btn btn-outline-secondary btn-sm">QR-ссылка</button>
-      </div>
-    </div>
-
-    <div class="row g-3">
-      <!-- ЛЕВО: МЕНЮ -->
-      <div class="col-lg-8">
-        <div class="card p-3">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h3 class="mb-0">Меню</h3>
+        <div class="card card-soft p-3" style="min-width: 320px;">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="fw-bold">Админ</div>
+              <div id="authLine" class="muted">Не вошли</div>
+            </div>
             <div class="d-flex gap-2">
-              <span class="pill">📅 <span id="today"></span></span>
-              <span class="pill">🔥 <span id="itemsCount">0</span> позиций</span>
+              <button id="loginBtn" class="btn btn-primary btn-sm">Войти (Google)</button>
+              <button id="logoutBtn" class="btn btn-outline-danger btn-sm d-none">Выйти</button>
             </div>
           </div>
 
-          <div class="row g-2 mb-2">
+          <!-- Admin panel (hidden until admin) -->
+          <div id="adminPanel" class="mt-3 d-none">
+            <div class="fw-bold mb-2">Добавить блюдо</div>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <input id="nameRu" class="form-control form-control-sm" placeholder="Название RU (Плов)">
+              </div>
+              <div class="col-md-6">
+                <input id="nameKz" class="form-control form-control-sm" placeholder="Название KZ (Палау)">
+              </div>
+              <div class="col-md-4">
+                <input id="price" type="number" class="form-control form-control-sm" placeholder="Цена">
+              </div>
+              <div class="col-md-5">
+                <select id="category" class="form-select form-select-sm">
+                  <option value="Горячее">Горячее</option>
+                  <option value="Напитки">Напитки</option>
+                  <option value="Выпечка">Выпечка</option>
+                  <option value="Десерт">Десерт</option>
+                  <option value="Другое">Другое</option>
+                </select>
+              </div>
+              <div class="col-md-3 d-flex align-items-center gap-2">
+                <input id="available" type="checkbox" class="form-check-input" checked>
+                <label for="available" class="form-check-label small">В наличии</label>
+              </div>
+              <div class="col-12 d-flex gap-2">
+                <button id="addDishBtn" class="btn btn-success btn-sm">Добавить</button>
+                <button id="seedBtn" class="btn btn-outline-secondary btn-sm">Заполнить тест-меню</button>
+              </div>
+              <div id="adminMsg" class="small muted"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="row g-3">
+      <!-- Menu -->
+      <div class="col-lg-8">
+        <div class="card card-soft p-3">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+            <div class="fw-bold fs-4">Меню</div>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <span class="pill">📅 <span id="today" class="mono"></span></span>
+              <span class="pill">🔥 <span id="itemsCount" class="mono">0</span> позиций</span>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
             <div class="col-md-6">
-              <input id="search" class="form-control" placeholder="Поиск: плов, компот..." />
+              <input id="search" class="form-control" placeholder="Поиск: плов, компот…">
             </div>
             <div class="col-md-3">
               <select id="sort" class="form-select">
-                <option value="popular">Сортировка: по умолчанию</option>
+                <option value="default">Сортировка: по умолчанию</option>
                 <option value="priceAsc">Цена: по возрастанию</option>
                 <option value="priceDesc">Цена: по убыванию</option>
                 <option value="nameAsc">Название: A→Я</option>
               </select>
             </div>
-            <div class="col-md-3">
-              <button id="refreshBtn" class="btn btn-outline-primary w-100">Обновить меню</button>
+            <div class="col-md-3 d-grid">
+              <button id="refreshBtn" class="btn btn-outline-primary">Обновить меню</button>
             </div>
           </div>
 
+          <div id="menuEmpty" class="alert alert-warning d-none">Ничего не найдено.</div>
           <div id="menu" class="menu-grid"></div>
 
-          <div class="small-note mt-3">
-            Подсказка: данные берутся из Firestore коллекции <span class="mono">menu</span>.
-          </div>
+          <div class="muted small mt-3">Подсказка: данные берутся из Firestore коллекции <b>menu</b>.</div>
         </div>
       </div>
 
-      <!-- ПРАВО: КОРЗИНА -->
+      <!-- Cart -->
       <div class="col-lg-4">
-        <div class="card p-3 sticky-cart">
-          <h4 class="mb-2">🛒 Корзина</h4>
-          <div id="cartEmpty" class="muted">Корзина пуста</div>
+        <div class="card card-soft p-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div style="font-size:22px">🛒</div>
+            <div class="fw-bold fs-4">Корзина</div>
+          </div>
 
-          <div id="cartList" class="list-group mb-3" style="display:none;"></div>
+          <div id="cartEmpty" class="muted mb-2">Корзина пуста</div>
+          <div id="cartList" class="vstack gap-2 mb-3"></div>
 
-          <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="fw-bold">Итого:</div>
-            <div class="fw-bold"><span id="total">0</span> ₸</div>
+            <div class="fw-bold fs-4"><span id="total">0</span> ₸</div>
           </div>
 
-          <div class="mb-2">
-            <input id="classInput" class="form-control mb-2" placeholder="Класс (6А)" />
-            <input id="nameInput" class="form-control" placeholder="Имя" />
-          </div>
+          <input id="className" class="form-control mb-2" placeholder="Класс (6А)">
+          <input id="studentName" class="form-control mb-3" placeholder="Имя">
 
           <button id="orderBtn" class="btn btn-success w-100">Оформить заказ</button>
+          <div class="muted small mt-2">Заказ сохраняется в коллекцию <b>orders</b>.</div>
 
-          <div class="small-note mt-2">
-            Заказ сохраняется в коллекцию <span class="mono">orders</span>.
-          </div>
+          <div id="orderMsg" class="small mt-2"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Модалка QR -->
-  <div class="modal fade" id="qrModal" tabindex="-1">
+  <!-- QR Modal -->
+  <div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
+      <div class="modal-content card-soft">
         <div class="modal-header">
-          <h5 class="modal-title">QR-ссылка на сайт</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <h5 class="modal-title">QR-код на сайт</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <div class="mb-2 muted">Открой на телефоне или распечатай QR:</div>
-          <div class="d-flex justify-content-center">
-            <img id="qrImg" alt="QR" style="max-width:260px;" />
-          </div>
-          <div class="mt-3">
-            <div class="muted">Ссылка:</div>
-            <div class="mono" id="siteLink"></div>
-          </div>
+        <div class="modal-body text-center">
+          <img id="qrImg" alt="QR" style="max-width: 260px;" />
+          <div class="muted small mt-2 mono" id="qrLink"></div>
         </div>
       </div>
     </div>
@@ -181,7 +166,7 @@
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Твой код -->
+  <!-- Your app -->
   <script type="module" src="./app.js"></script>
 </body>
 </html>
