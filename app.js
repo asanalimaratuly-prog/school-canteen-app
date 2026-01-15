@@ -1,4 +1,4 @@
-// Firebase (modular SDK) — важно: домен gstatic, НЕ gstaticstatic
+// Firebase (modular SDK)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   getFirestore, collection, getDocs, addDoc, doc, getDoc, serverTimestamp
@@ -7,19 +7,15 @@ import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
-/* =========================================================
-   ✅ 1) ВСТАВЬ СЮДА СВОЙ firebaseConfig ИЗ Firebase Console
-   Firebase → Project settings → Your apps → Web app → Config
-   ========================================================= */
+/* ✅ ТВОЙ firebaseConfig */
 const firebaseConfig = {
-  apiKey: "PASTE_HERE",
-  authDomain: "PASTE_HERE",
-  projectId: "PASTE_HERE",
-  storageBucket: "PASTE_HERE",
-  messagingSenderId: "PASTE_HERE",
-  appId: "PASTE_HERE"
+  apiKey: "AIzaSyD3SQTDEmr7g8r9VHWX5Q-h4Tfq2d0rRiE",
+  authDomain: "ashana-ca8a3.firebaseapp.com",
+  projectId: "ashana-ca8a3",
+  storageBucket: "ashana-ca8a3.firebasestorage.app",
+  messagingSenderId: "1004661503332",
+  appId: "1:1004661503332:web:ba12c7e9d25144c3f07671"
 };
-/* ========================================================= */
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -68,9 +64,9 @@ const qrLink = document.getElementById("qrLink");
 const qrModal = new bootstrap.Modal(document.getElementById("qrModal"));
 
 // State
-let MENU = [];         // raw menu from Firestore
-let VIEW = [];         // filtered/sorted view
-let CART = new Map();  // id -> {item, qty}
+let MENU = [];
+let VIEW = [];
+let CART = new Map();
 let isAdmin = false;
 
 // Helpers
@@ -88,8 +84,6 @@ todayEl.textContent = todayStr();
 
 // ---------- AUTH ----------
 async function checkAdmin(uid) {
-  // Admin определяется документом: admins/{uid} exists == true
-  // Создать можно вручную в Firestore (1 документ)
   const ref = doc(db, "admins", uid);
   const snap = await getDoc(ref);
   return snap.exists();
@@ -102,9 +96,6 @@ loginBtn.addEventListener("click", async () => {
   } catch (e) {
     console.error(e);
     statusEl.textContent = "Ошибка входа. Открой Console (F12).";
-    // Частые причины:
-    // 1) Google provider не включен
-    // 2) Authorized domains не добавлен
   }
 });
 
@@ -145,7 +136,8 @@ async function loadMenu() {
   try {
     const snap = await getDocs(collection(db, "menu"));
     MENU = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .filter(x => x && x.available !== false); // скрываем недоступные
+      .filter(x => x && x.available !== false);
+
     statusEl.textContent = "Готово ✅";
     applyFilters();
   } catch (e) {
@@ -184,7 +176,6 @@ refreshBtn.addEventListener("click", loadMenu);
 function renderMenu() {
   menuEl.innerHTML = "";
   itemsCountEl.textContent = String(VIEW.length);
-
   menuEmptyEl.classList.toggle("d-none", VIEW.length !== 0);
 
   for (const item of VIEW) {
@@ -246,7 +237,6 @@ function renderMenu() {
 function renderCart() {
   const items = [...CART.values()];
   cartListEl.innerHTML = "";
-
   cartEmptyEl.classList.toggle("d-none", items.length !== 0);
 
   let total = 0;
