@@ -89,6 +89,7 @@ btnAddMenu?.addEventListener("click", async () => {
       available: !!newAvailable.checked,
       createdAt: serverTimestamp()
     });
+day: (document.getElementById("dayBadge")?.textContent || "").trim()
 
     adminMsg.textContent = "✅ Добавлено! Нажми «Обновить меню» (или обнови страницу).";
     newNameRu.value = "";
