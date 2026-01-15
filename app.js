@@ -17,12 +17,12 @@ import {
 
 // ✅ ВСТАВЬ СВОЙ firebaseConfig
 const firebaseConfig = {
-  // apiKey: "...",
-  // authDomain: "...",
-  // projectId: "...",
-  // storageBucket: "...",
-  // messagingSenderId: "...",
-  // appId: "..."
+  apiKey: "AIzaSyD3SQTDem7g8r9VHWX5Q-h4Tfq2d0rRiE",
+  authDomain: "ashana-ca8a3.firebaseapp.com",
+  projectId: "ashana-ca8a3",
+  storageBucket: "ashana-ca8a3.appspot.com",
+  messagingSenderId: "1004661503332",
+  appId: "1:1004661503332:web:ba12c7e9d25144c3f07671"
 };
 
 const app = initializeApp(firebaseConfig);
