@@ -291,7 +291,8 @@ orderBtn.addEventListener("click", async () => {
     total: Number(totalEl.textContent) || 0,
     createdAt: serverTimestamp(),
     status: "new"
-  };
+    createdAt: serverTimestamp()
+  });
 
   try {
     orderBtn.disabled = true;
